@@ -1,0 +1,209 @@
+---
+title: "Class06: R Functions"
+author: "Isabella Franco"
+format: pdf
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+> Q1. Write a function grade() to determine an overall grade from a vector of student homework assignment scores dropping the lowest single score. If a student misses a homework (i.e. has an NA value) this can be used as a score to be potentially dropped. Your final function should be adquately explained with code comments and be able to work on an example class gradebook such as this one in CSV format: "https://tinyurl.com/gradeinput" \[3pts\]
+
+```{r}
+# Example input vectors to start with
+student1 <- c(100, 100, 100, 100, 100, 100, 100, 90)
+student2 <- c(100, NA, 90, 90, 90, 90, 97, 80)
+student3 <- c(90, NA, NA, NA, NA, NA, NA, NA)
+```
+
+We can use the `mean()` function the average for a given student vector.
+
+```{r}
+mean(student1)
+mean(student2, na.rm=TRUE)
+```
+
+We can replace the missed assignment NA values wih a score of zero. How do I do this?
+
+We can use the `is.na()` function to help?
+
+```{r}
+student3 
+is.na(student3)
+```
+
+I can make these values be anything I want it is time to work with new temp object(that I will call `x` so I don't screw up my original objects
+
+```{r}
+x<-student3
+x
+```
+
+```{r}
+x[is.na(x)]<-0
+x
+```
+
+Now that we have assigned NA=0, we can get our mean
+
+**MEAN**
+
+```{r}
+mean(x)
+```
+
+Finally, we want to drop the lowest score before calculating the mean. This is equivalent to allowing the student to drop their lowest assignment score. **Mean with dropped lowest score**
+
+```{r}
+x<-student1
+x
+which.min(x)
+mean(x[-8])
+```
+
+Now i need to put this all back togehter to make oue working snippet:
+
+```{r}
+x<-student1
+x
+# Map/Replace NA values to zero
+x[is.na(x)]<-0
+
+# Exclude the lowest score and calculate the mean
+mean(x[-which.min(x)])
+
+```
+
+Cool! This is my working snippet that I can turn into a function called `grade()`
+
+All functions in R have at least 3 things:
+
+-   **Name**, in our case "grade"
+-   Input **arguments**, student1 etc.
+-   **Body**, this is our working snipe above.
+
+```{r}
+grade<-function(x){
+  # Map/Replace NA values to zero
+  x[is.na(x)]<-0
+
+
+  # Exclude the lowest score and calculate the mean
+  mean(x[-which.min(x)])
+}
+```
+
+Can I use this function now?
+
+```{r}
+grade(student1)
+```
+
+Read a gradebook from online:
+
+```{r}
+hw<-read.csv("https://tinyurl.com/gradeinput", row.names=1)
+hw
+ 
+```
+
+We can use the `apply()` function to grade all the students in this class with our new `grade()` function.
+
+The `apply()` functions allows us to run any function over the rows or columns of a data.frame. let's see how it works: - apply(data, margin=1, Function)
+
+```{r}
+ans<-apply(hw, 1, grade)
+ans
+```
+
+> Q2. Using your grade() function and the supplied gradebook, Who is the top scoring student overall in the gradebook? \[3pts\]
+
+```{r}
+ans[which.max(ans)]
+```
+Student 18 was the top scoring student overall.
+BiocManager::install()
+> Q3. From your analysis of the gradebook, which homework was toughest on students (i.e. obtained the lowest scores overall? \[2pts\]
+
+```{r}
+hw
+```
+
+```{r}
+ave_score<-apply(hw,2,mean,na.rm=TRUE)
+which.min(ave_score)
+```
+
+```{r}
+total_score<-apply(hw,2,sum,na.rm=TRUE)
+which.min(total_score)
+```
+
+```{r}
+total_score
+ave_score
+```
+
+Homework 2 is the lowest scoring Homework and therefore was likely the toughest on students.
+
+> Q4. Optional Extension: From your analysis of the gradebook, which homework was most predictive of overall score (i.e. highest correlation with average grade score)? \[1pt\]
+
+```{r}
+hw$hw1
+```
+
+```{r}
+```
+
+```{r}
+ans
+```
+
+```{r}
+cor(hw$hw1, ans)
+cor(hw$hw3, ans)
+```
+
+If I try on HW2, I get NA because there is a missing homework assignment(s).
+
+```{r}
+cor(hw$hw2, ans)
+```
+
+Because of this, I will mask all NA values to zero
+
+```{r}
+mask<-hw
+mask[is.na(mask)]<-0
+mask
+```
+
+```{r}
+cor(mask$hw5, ans)
+```
+
+We can use the `apply` function here on the columns of hw(i.e. the individual homeworks) and pass it the overall scores for the class (in my `ans` object as an extra argument)
+
+```{r}
+apply(mask, 2, cor, y=ans)
+```
+Homework 5 is the most predictive of the overall score.

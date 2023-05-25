@@ -1,0 +1,200 @@
+---
+title: "class7: Clustering and PCA"
+format: pdf
+editor: visual
+author: "Isabella Franco"
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+# Clustering
+
+First let's make up some data to cluster so we can get a feel for these methods and how to work with them
+
+We can use the `rnorm()` function to get random numbers from a normal distribution around a given `mean.`
+
+```{r}
+hist(rnorm(5000, mean=3))
+```
+
+Let's get 30 points with a mean of 3
+
+```{r}
+tmp<- c(rnorm(30, mean=3), rnorm(30, mean=-3))
+```
+
+```{r}
+x<-cbind(x=tmp, y=rev(tmp))
+
+plot(x)
+```
+
+## K- means clustering.
+
+Very popular clustering method that we can use wtih the `kmeans()` function in base R.
+
+```{r}
+km<-kmeans(x, centers=2)
+km
+```
+
+What is our cluster size?
+
+```{r}
+km$size
+```
+
+Cluster size?
+
+```{r}
+km$cluster
+```
+
+Cluster center?
+
+```{r}
+km$centers
+```
+
+> Q. plot x colored by the kmeans clusters assignment and add cluster centers as blue points
+
+```{r}
+plot(x,col=km$cluster)
+points(km$centers, col="blue", pch=15, cex=2)
+```
+
+> Q Let's cluster into 3 groups or same `x` data and make a plot.
+
+```{r}
+km<-kmeans(x, centers=3)
+plot(x,col=km$cluster)
+points(km$centers, col="blue", pch=15, cex=2)
+```
+
+# Hierarchical Clustering
+
+We can use the `hclust()` function for Hierarchical Clustering.\
+Unlike `kmeans()` where we could just pass in our data as input, we need to give `hclust()` a "distance matrix".
+
+We will use the `dist()` function to start with.
+
+```{r}
+d<-dist(x)
+
+```
+
+```{r}
+hc<-hclust(d)
+hc
+```
+
+```{r}
+plot(hc)
+```
+
+I can now "cut" my tree with the `cutree()` to yield a cluster membership vector.
+
+```{r}
+grps<-cutree(hc, h=8)
+grps
+```
+
+You can also tell `cutree()` to cut where it yields "k" groups.
+
+```{r}
+cutree(hc, k=2)
+```
+
+```{r}
+plot(x, col=grps)
+
+```
+
+# Principal Component Analysis (PCA)
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url, row.names=1)
+x
+```
+
+> Q1. How many rows and columns are in your new data frame named x? What R functions could you use to answer this questions?
+
+Nrow() can be used to give us the number of rows and ncol() can be used to give us the number of columns as shown below.
+
+```{r}
+nrow(x)
+ncol(x)
+```
+
+```{r}
+head(x)
+```
+
+```{r}
+
+```
+
+> Q2. Which approach to solving the 'row-names problem' mentioned above do you prefer and why? Is one approach more robust than another under certain circumstances?
+
+I used row.names= as opposed to: rownames(x) \<- x\[,1\] x \<- x\[,-1\] head(x) because this code is destructive as subtracts a column everytime you run it.
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+> Q3: Changing what optional argument in the above barplot() function results in the following plot?
+
+If I change beside=T, to beside=F, I make a stacked plot which is useless
+
+```{r}
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+```
+
+```{r}
+pairs(x, col=rainbow(10), pch=16)
+```
+
+> Q5: Generating all pairwise plots may help somewhat. Can you make sense of the following code and resulting figure? What does it mean if a given point lies on the diagonal for a given plot?
+
+Although difficult to interpret, this visual representation is more useful than our bar plots as it gives us comparative data points and allows us to visualize how similar the consumption is among different places. Points clustering on the diagonal represent more similar consumption and points straying farther from the diagonal suggests differing consumption of that item between places. The downside to this approach is when comparing so many things such as genes, this would be a very difficult plot to analyze so to make this easier: we use PCA.
+
+The main PCA function in Base R is called `prcomp()` it expects the transpose of our data
+
+```{r}
+pca <- prcomp( t(x) )
+summary(pca)
+```
+
+```{r}
+attributes(pca)
+```
+
+```{r}
+pca$x
+```
+
+```{r}
+plot(pca$x[,1],pca$x[,2],col=c("orange","red","blue","green"), pch=16)
+```
+
+> Q6. What is the main differences between N. Ireland and the other countries of the UK in terms of this data-set? In terms of this data set, N. Ireland has the largest difference in food consumption compared to the rest of the UK.
